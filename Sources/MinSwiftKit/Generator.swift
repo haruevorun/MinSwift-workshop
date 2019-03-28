@@ -45,37 +45,88 @@ private struct Generator<NodeType: Node>: GeneratorProtocol {
 
 extension Generator where NodeType == NumberNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        return FloatType.double.constant(node.value)
     }
 }
 
 extension Generator where NodeType == VariableNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        guard let variable = context.namedValues[node.identifier] else {
+            fatalError("Undefined variable named a")
+        }
+        return variable
     }
 }
 
 extension Generator where NodeType == BinaryExpressionNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        let lhsVal: IRValue = generateIRValue(from: node.lhs, with: context)
+        let rhsVal: IRValue = generateIRValue(from: node.rhs, with: context)
+        
+        switch node.operator {
+        case .addition:
+            return context.builder.buildAdd(lhsVal, rhsVal, name: "addtmp")
+        case .subtraction:
+            return context.builder.buildSub(lhsVal, rhsVal, name: "subtmp")
+        case .multication:
+            return context.builder.buildMul(lhsVal, rhsVal, name: "multmp")
+        case .division:
+            return context.builder.buildDiv(lhsVal, rhsVal, name: "divtmp")
+        case .lessThan:
+            let bool = context.builder.buildFCmp(lhsVal, rhsVal, .orderedLessThan, name: "cmptmp")
+            return context.builder.buildIntToFP(bool, type: FloatType.double, signed: true)
+        case .greaterThan:
+            let bool = context.builder.buildFCmp(lhsVal, rhsVal, .orderedGreaterThan, name: "cmptmp")
+            return context.builder.buildIntToFP(bool, type: FloatType.double, signed: true)
+        }
     }
 }
 
 extension Generator where NodeType == FunctionNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        ///引数
+        let argmentTypes = [IRType](repeating: FloatType.double, count: node.arguments.count)
+        let returnType: IRType
+        ///返り値
+        switch node.returnType {
+        case .double:
+            returnType = FloatType.double
+        default:
+            fatalError()
+        }
+        
+        let functionType = FunctionType(argTypes: argmentTypes, returnType: returnType)
+        let function: Function = context.builder.addFunction(node.name, type: functionType)
+        let entryBasicBlock = function.appendBasicBlock(named: "entry")
+        context.builder.positionAtEnd(of: entryBasicBlock)
+        
+        context.namedValues.removeAll()
+        //パラメーター設定
+        for (index, arg) in node.arguments.enumerated() {
+            context.namedValues[arg.variableName] = function.parameters[index]
+        }
+        
+        let functionBody = generateIRValue(from: node.body, with: context)
+        context.builder.buildRet(functionBody)
+        return functionBody
     }
 }
 
 extension Generator where NodeType == CallExpressionNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        let function = context.module.function(named: node.callee)!
+        var arguments = [IRValue]()
+        for arg in node.arguments {
+            arguments.append(generateIRValue(from: arg.value, with: context))
+        }
+        return context.builder.buildCall(function, args: arguments, name: "calltmp")
     }
 }
 
 extension Generator where NodeType == IfElseNode {
     func generate(with context: BuildContext) -> IRValue {
-        fatalError("Not Implemented")
+        let condition: IRValue = generateIRValue(from: node.condition, with: context)
+        let boolean = context.builder.buildFCmp(condition, <#T##rhs: IRValue##IRValue#>, <#T##predicate: RealPredicate##RealPredicate#>, name: <#T##String#>)
     }
 }
 

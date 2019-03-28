@@ -14,6 +14,7 @@ func sayHello() {
         let url = makeTemporaryFile(source)
         defer { removeTempoaryFile(at: url) }
         let sourceFile = try! SyntaxTreeParser.parse(url)
+        print("sourceFile:\(sourceFile)")
         parser.visit(sourceFile)
     }
 
