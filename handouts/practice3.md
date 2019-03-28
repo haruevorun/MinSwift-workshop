@@ -51,9 +51,14 @@ func parseBinaryOperatorRHS(expressionPrecedence: Int, lhs: Node)
 
 まず手始めにオペレータのトークンからオペレータを生成します。
 
-`extractBinaryOperator`を実装してみてください。注意点として、今回は未知のトークンが来た場合に`Operator?`として返す点です。
+`extractBinaryOperator`を実装してみてください。
 
-後の実装では、オペレータが見つからなかった場合は、優先度-1として扱っています。その方が都合が良いのです。
+このメソッドは、`+`など、演算子の文字列を受け取って、適切な`BinaryExpressionNode.Operator`に変換して返すメソッドです。
+SwiftSyntaxでは、`+`などは`.spacedBinaryOperator("+")`で表現できます。
+
+注意点として、今回は未知のトークンが来た場合に`Operator?`として返す点です。
+
+`extractBinaryOperator`ではオペレータが見つからなかった場合は、`nil`を返すことにして、優先度-1として扱っています。その方が都合が良いのです。
 
 ## 3-2〜3-5. いろいろな演算
 
